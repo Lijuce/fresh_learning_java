@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd">
+
+
+    <context:component-scan base-package="itcast"></context:component-scan>
+
+</beans>
+
+<!--<?xml version="1.0" encoding="UTF-8"?>-->
+<!--<beans xmlns="http://www.springframework.org/schema/beans"-->
+<!--       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"-->
+<!--       xsi:schemaLocation="http://www.springframework.org/schema/beans-->
+<!--        http://www.springframework.org/schema/beans/spring-beans.xsd">-->
+
+<!--&lt;!&ndash;    <bean id="accountService" class="itcast.service.impl.AccountServiceImpl"></bean>&ndash;&gt;-->
+<!--&lt;!&ndash;    <bean id="accountDao" class="itcast.dao.Dao.Impl.AccountDaoImpl"></bean>&ndash;&gt;-->
+<!--&lt;!&ndash;    第一种创建方法&ndash;&gt;-->
+<!--&lt;!&ndash;    <bean id="accountService" class="itcast.service.impl.AccountServiceImpl"></bean>&ndash;&gt;-->
+
+<!--&lt;!&ndash;    第二种创建方法&ndash;&gt;-->
+<!--&lt;!&ndash;    <bean id="instanceFactory" class="itcast.factory.instanceFactory"></bean>&ndash;&gt;-->
+<!--&lt;!&ndash;    <bean id="accountService" factory-bean="instanceFactory" factory-method="acc"></bean>&ndash;&gt;-->
+
+<!--&lt;!&ndash;    第三种创建方法&ndash;&gt;-->
+<!--&lt;!&ndash;        <bean id="accountService" class="itcast.factory.staticFactory" factory-method="acc"></bean>&ndash;&gt;-->
+
+<!--</beans>-->
