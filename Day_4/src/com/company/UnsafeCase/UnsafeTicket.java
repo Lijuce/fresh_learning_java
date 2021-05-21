@@ -1,7 +1,4 @@
-package com.company.syn;
-
-import java.util.ArrayList;
-import java.util.List;
+package com.company.UnsafeCase;
 
 /**
  * 不安全案例之抢票

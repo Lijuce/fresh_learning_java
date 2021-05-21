@@ -1,4 +1,4 @@
-package com.company.syn;
+package com.company.UnsafeCase;
 
 import java.util.ArrayList;
 import java.util.List;

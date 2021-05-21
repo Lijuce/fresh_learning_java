@@ -1,4 +1,4 @@
-package com.company.syn;
+package com.company.UnsafeCase;
 
 /**
  * 不安全案例之银行取钱
