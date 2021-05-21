@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * 不安全案例之抢票
  */
-public class UnsafeList {
+public class UnsafeTicket {
     public static void main(String[] args) {
         BuyTicket buyTicket = new BuyTicket();
         new Thread(buyTicket, "小红").start();
