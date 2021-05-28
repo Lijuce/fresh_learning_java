@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="mybatis02_notation">
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/../mybatis02_notation" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/../mybatis02_notation/src/main/java" />
+      <root url="file://$PROJECT_DIR$/../mybatis02_notation/src/test/java" />
+    </SOURCES>
+  </library>
+</component>
