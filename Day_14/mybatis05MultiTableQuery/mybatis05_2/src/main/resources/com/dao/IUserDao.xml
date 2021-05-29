@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.dao.IAccountDao">
+    <!-- 一对多查询配置 -->
+    <resultMap id="userMap" type="com.domain.User">
+        <id column="uid" property="id"></id>
+        <result column="name" property="name"/>
+
+        <!-- collection 是用于建立一对多中集合属性的对应关系
+        ofType 用于指定集合元素的数据类型
+        -->
+        <collection property="accounts" ofType="com.domain.Account">
+            <id column="id" property="id"/>
+            <result column="uid" property="uid"/>
+            <result column="money" property="money"/>
+        </collection>
+    </resultMap>
+    <select id="findAll" resultMap="userMap">
+        select u.*, a.id, a.uid, a.money from user u left outer join account a on u.uid=a.uid;
+    </select>
+
+</mapper>
