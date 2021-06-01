@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans 
+                     http://www.springframework.org/schema/beans/spring-beans.xsd
+                     http://www.springframework.org/schema/aop 
+                     http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+    <bean id="accountService" class="com.service.impl.AccountServiceImpl"></bean>
+
+    <!--配置Logger类-->
+    <bean id="looger" class="com.utils.Logger"></bean>
+    <!--
+        1、把通知bean交给spring管理；
+        2、使用aop:config标签表开始AOP配置；
+        3、在aop:config内部，使用aop:aspect表开始切面配置
+            id属性：为 切面 提供唯一标识
+            ref属性： 指定通知类bean的ID
+        4、在aop:aspect内部，使用对应标签配置通知类型
+            以下为示例：
+                aop:before 表前置通知类型
+                    method属性：用于指定类bean中哪个方法是前置通知
+                    pointcut属性：指定 切入点 表达式，该表达式含义即对业务层指定方法进行增强
+
+                    切入点表达式写法：
+                        关键字：execution
+                        格式：访问修饰符  返回值  包名.包名.包名...类名.方法名(参数列表)
+                        标准示例(注：该写法过于死板)：public void com.service.impl.AccountServiceImpl.findAccount()
+                     一般示例(实际开发的通常写法)：* com.service.impl.*.*(..)
+    -->
+    <aop:config>
+        <aop:aspect id="logAdvice" ref="looger">
+            <aop:before method="pringLog" pointcut="execution(* com.service.impl.*.*(..))"></aop:before>
+        </aop:aspect>
+
+    </aop:config>
+</beans>
+
+
