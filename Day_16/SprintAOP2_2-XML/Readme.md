@@ -1,9 +1,0 @@
-# 两种不同的动态代理实现方式
-## 纯配置方式实现
-- 该方式即利用Spring自带的XML中四种通知类型标签实现，包括前置通知aop:before、后置通知aop:after、异常通知aop:after-throwing和最终通知aop:after-returning。
-- 在这些通知标签内部指定增强方法，即可实现该动态代理机制。
-## 配置+代码方式实现
-- 该方式则仅利用Spring自带的XML标签中的环绕通知aop:around
-- 在环绕通知标签基础上，通过自行编写代码实现动态代理机制。
-    - 其中重点用到Spring内置的接口ProceedingJoinPoint，其作为环绕通知的方法参数。
-    - 具体代码实现查阅Logger类
