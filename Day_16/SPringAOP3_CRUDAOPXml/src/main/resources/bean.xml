@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+ http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+    <aop:config>
+        <aop:pointcut id="tManager" expression="execution(* com.service.impl.*.*(..))"/>
+        <aop:aspect id="aspectService" ref="transactionManager">
+<!--            一般的四类通知XML配置-->
+<!--            <aop:before method="beginTransaction" pointcut-ref="tManager"></aop:before>-->
+<!--            <aop:after method="commit" pointcut-ref="tManager"></aop:after>-->
+<!--            <aop:after-throwing method="rollback" pointcut-ref="tManager"></aop:after-throwing>-->
+<!--            <aop:after-returning method="release" pointcut-ref="tManager"></aop:after-returning>-->
+
+<!--            环绕通知XML配置-->
+            <aop:around method="transactionAround" pointcut-ref="tManager"></aop:around>
+        </aop:aspect>
+    </aop:config>
+    
+<!--    &lt;!&ndash;    配置代理的service&ndash;&gt;-->
+<!--    <bean id="beanProxy" factory-bean="beanFactory" factory-method="getBeanFactory"></bean>-->
+
+<!--    &lt;!&ndash;    配置beanFactory&ndash;&gt;-->
+<!--    <bean id="beanFactory" class="com.BeanFactory">-->
+<!--        &lt;!&ndash;注入事务管理&ndash;&gt;-->
+<!--        <property name="transactionManager" ref="transactionManager"></property>-->
+<!--        &lt;!&ndash;注入service&ndash;&gt;-->
+<!--        <property name="iAccountService"    ref="accountService"></property>-->
+<!--    </bean>-->
+
+    <!-- 配置service -->
+    <bean id="accountService" class="com.service.impl.AccountServiceImpl">
+        <!--注入Dao-->
+        <property name="accountDao" ref="accountDao"></property>
+    </bean>
+
+    <!-- 配置Dao -->
+    <bean id="accountDao" class="com.dao.impl.AccountDaoImpl">
+        <property name="queryRunner" ref="runner"></property>
+        <property name="connectionUtils" ref="connectionUtils"></property>
+    </bean>
+
+    <!--配置QueryRunner-->
+    <bean id="runner" class="org.apache.commons.dbutils.QueryRunner" scope="prototype">
+        <!--注入数据库数据源-->
+        <constructor-arg name="ds" ref="dataSource"></constructor-arg>
+    </bean>
+
+
+    <bean id="connectionUtils" class="com.utils.ConnectionUtils">
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+
+    <bean id="transactionManager" class="com.utils.TransactionManager">
+        <property name="connectionUtils" ref="connectionUtils"></property>
+    </bean>
+    <!-- 配置数据库数据源 -->
+    <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+        <!--连接数据库的必备信息-->
+        <property name="driverClass" value="com.mysql.cj.jdbc.Driver"></property>
+        <property name="jdbcUrl" value="jdbc:mysql://localhost:3306/test"></property>
+        <property name="user" value="root"></property>
+        <property name="password" value="mysql"></property>
+    </bean>
+</beans>
+
+
