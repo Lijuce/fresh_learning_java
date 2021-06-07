@@ -1,0 +1,41 @@
+## SpringMVC的数据请求
+### 请求基本类型参数
+1. 直接获取简单参数(对应方法HelloController/sayHello)
+    - 在方法中设置形参，对应简单参数
+2. 获取POJO类型参数
+    - Controller中的业务方法POJO参数属性名与请求参数的名一致，参数值会自动映射匹配（当然，POJO类中需要有设置setter/getter方法
+3. 获取数组类型参数
+    - 同上
+    - 利用数组进行封装即可
+4. 获取集合类型参数(1)
+    - 包装至一个POJO对象中，对应属性名称一致即可
+5. 获取集合类型参数(2)
+    - 当使用Ajax提交时，可指定contentType为json形式，无需另外使用POJO对象封装
+    - 用法：方法的形参前加入@RequestBody
+    - 注：需要在xml文件中进行配置，开放静态资源的访问权限(<mvc:resources>标签)
+
+**另外，额外的问题：**
+- 请求数据乱码问题的解决:
+    - post请求，数据出现乱码，可xml配置一个全局过滤器进行编码的过滤。
+    - 标签：<filter>
+6. 请求参数绑定
+    - 作用：当请求参数名与业务方法参数名不一致时，可通过@RequestParam注解进行显示绑定。
+    - 属性：
+        - value：请求参数名称绑定
+        - required：指定的请求参数是否必须，默认true。若提交时无此参数将报错
+        - defaultValue：当没有指定请求参数时，使用指定默认值传入
+7. 获取Restful风格的参数
+    - 概念：Restful是一种**软件设计风格**，非标准。用于客户端和服务器交互类的软件。
+    - Restful风格请求：**"url+请求方式"**表示一次请求目的，包括get/post/put/delete。
+8. 自定义类型转换器
+    - 意义：虽然SpringMVC内置了常用类型转换器，但并非所有都可自动转换，此时需要自行定义。
+    - 自定义类型转换器开发步骤：
+        1. 定义转换器类实现Converter接口
+        2. 配置文件中声明转换器
+        3. 在<annotation-driven>中引用转换器
+9. 获取Servlet相关API（直接作为方法参数传入）
+    - HTTPServletRequest
+    - HTTPServletResponse
+    - HTTPSession
+10. 获取请求头
+    - 重要注解：@RequestHeader
