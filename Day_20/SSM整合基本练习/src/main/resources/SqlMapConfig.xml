@@ -1,0 +1,23 @@
+<!--<?xml version="1.0" encoding="UTF-8"?>-->
+<!--<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">-->
+<!--<configuration>-->
+<!--&lt;!&ndash;    MySQL基本配置&ndash;&gt;-->
+<!--    <environments default="mysql">-->
+<!--        <environment id="mysql">-->
+<!--            <transactionManager type="JDBC"></transactionManager>-->
+<!--            <dataSource type="POOLED">-->
+<!--                <property name="driver" value="com.mysql.cj.jdbc.Driver"/>-->
+<!--                <property name="url" value="jdbc:mysql://localhost:3306/test"/>-->
+<!--                <property name="username" value="root"/>-->
+<!--                <property name="password" value="mysql"/>-->
+<!--            </dataSource>-->
+<!--        </environment>-->
+<!--    </environments>-->
+
+<!--&lt;!&ndash;    映射配置文件&ndash;&gt;-->
+<!--    <mappers>-->
+<!--&lt;!&ndash;        该包下的所有dao接口都可使用&ndash;&gt;-->
+<!--        <package name="com.dao"/>-->
+<!--    </mappers>-->
+<!--    -->
+<!--</configuration>-->
