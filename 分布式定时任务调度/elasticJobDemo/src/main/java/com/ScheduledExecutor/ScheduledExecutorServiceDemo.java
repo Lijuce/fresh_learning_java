@@ -2,9 +2,7 @@ package com.ScheduledExecutor;
 
 import java.text.ParseException;
 import java.util.Date;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * @ClassName ScheduledExecutorServiceDemo
@@ -20,7 +18,7 @@ public class ScheduledExecutorServiceDemo implements Runnable{
     }
 
     public static void main(String[] args) throws ParseException {
-        ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(10);
+        ScheduledThreadPoolExecutor scheduledExecutorService = new ScheduledThreadPoolExecutor(10);
         scheduledExecutorService.scheduleAtFixedRate(new ScheduledExecutorServiceDemo(), 1000, 2000, TimeUnit.MILLISECONDS);
     }
 
