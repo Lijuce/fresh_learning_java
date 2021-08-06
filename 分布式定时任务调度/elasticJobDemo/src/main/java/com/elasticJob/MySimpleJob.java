@@ -20,6 +20,22 @@ public class MySimpleJob implements SimpleJob {
                 context.getShardingItem(),
                 new SimpleDateFormat("HH:mm:ss").format(new Date()),
                 Thread.currentThread().getId(),
-                context.getJobParameter()));
+                context.getShardingParameter()));
+        String target = context.getShardingParameter();
+        int shardingItem = context.getShardingItem();
+        switch (shardingItem) {
+            case 0:
+                System.out.println("物流发放至：" + target);
+                break;
+            case 1:
+                System.out.println("物流发放至：" + target);
+                break;
+            case 2:
+                System.out.println("物流发放至：" + target);
+                break;
+            case 3:
+                System.out.println("物流发放至：" + target);
+                break;
+        }
     }
 }

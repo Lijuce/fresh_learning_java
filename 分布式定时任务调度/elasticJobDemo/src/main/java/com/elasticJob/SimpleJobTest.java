@@ -33,30 +33,33 @@ public class SimpleJobTest {
         dataSource.setPassword("mysql");
         JobEventConfiguration jobEventConfig = new JobEventRdbConfiguration(dataSource);
 
-        // 定义作业核心配置
+        // 定义作业核心配置(simpleJob类型)
         JobCoreConfiguration coreConfig = JobCoreConfiguration
                 .newBuilder("MySimpleJob", "0/2 * * ? * *", 4)
-                .shardingItemParameters("0=RDP, 1=CORE, 2=SIMS, 3=ECIF")
+                .shardingItemParameters("0=北京,1=上海,2=广州,3=深圳")
                 .failover(true)
                 .build();
-        JobCoreConfiguration myDataflowJobConfig = JobCoreConfiguration.newBuilder("MyDataflowJob", "0/2 * * ? * *", 4)
+        // 定义作业核心配置(dataFlow类型)
+        JobCoreConfiguration myDataflowJobConfig = JobCoreConfiguration
+                .newBuilder("MyDataflowJob", "0/2 * * ? * *", 4)
                 .shardingItemParameters("0=RDP, 1=CORE, 2=SIMS, 3=ECIF")
                 .failover(true)
                 .build();
 
         // 定义Simple类型配置
         SimpleJobConfiguration simpleJobConfig = new SimpleJobConfiguration(coreConfig, MySimpleJob.class.getCanonicalName());
+        // 定义dataFlow类型配置
         DataflowJobConfiguration dataflowJobConfiguration = new DataflowJobConfiguration(myDataflowJobConfig, MyDataflowJob.class.getCanonicalName(), true);
 
         // 作业分片策略
         String jobShardingStrategyClass = AverageAllocationJobShardingStrategy.class.getCanonicalName();
 
         // 定义Lite作业根配置
-//        LiteJobConfiguration jobRootConfig = LiteJobConfiguration.newBuilder(simpleJobConfig).overwrite(true).build();
-        LiteJobConfiguration dataflowJobRootConfig = LiteJobConfiguration.newBuilder(dataflowJobConfiguration).build();
+        LiteJobConfiguration jobRootConfig = LiteJobConfiguration.newBuilder(simpleJobConfig).overwrite(true).build();
+//        LiteJobConfiguration dataflowJobRootConfig = LiteJobConfiguration.newBuilder(dataflowJobConfiguration).build();
 
         // 构建Job
-        new JobScheduler(regCenter, dataflowJobRootConfig, jobEventConfig).init();
+        new JobScheduler(regCenter, jobRootConfig, jobEventConfig).init();
 
 
     }
