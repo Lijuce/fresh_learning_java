@@ -7,7 +7,7 @@ public class JdkProxyFactory {
         return Proxy.newProxyInstance(
                 target.getClass().getClassLoader(),
                 target.getClass().getInterfaces(),
-                new SmsDynamicProxy(target)
+                new CommonDynamicProxy(target)
         );
     }
 }

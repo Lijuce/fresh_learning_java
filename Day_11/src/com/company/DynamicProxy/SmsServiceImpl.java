@@ -1,6 +1,6 @@
 package com.company.DynamicProxy;
 
-import com.company.StaticProxy.ISmsService;
+import com.company.DynamicProxy.ISmsService;
 
 public class SmsServiceImpl implements ISmsService {
     @Override
