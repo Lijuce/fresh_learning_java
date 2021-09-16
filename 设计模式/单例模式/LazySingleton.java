@@ -8,7 +8,7 @@ package com.company.singleTon;
  */
 public class LazySingleton {
     // 自身实例化对象设置为一个属性，用static修饰
-    private static LazySingleton instance = new LazySingleton();
+    private static LazySingleton instance;
 
     private LazySingleton(){}
 
