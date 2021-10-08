@@ -130,7 +130,6 @@ public class ChatClient {
                         // 注意：此处是NIO线程，和上面的System in是两个不同的线程
                         @Override
                         public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-//                            System.out.println("读取消息：" + msg);
                             if ((msg instanceof LoginResponseMessage)) {
                                 LoginResponseMessage responseMessage = (LoginResponseMessage) msg;
                                 if (responseMessage.isSuccess()) {

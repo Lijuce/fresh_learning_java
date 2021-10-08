@@ -44,6 +44,7 @@ public class ChatServer {
                     pipeline.addLast(new GroupChatRequestMessageHandler());
                     pipeline.addLast(new GroupQuitRequestMessageHandler());
                     pipeline.addLast(new GroupMembersRequestMessageHandler());
+                    pipeline.addLast(new QuitHandler());
                 }
             });
 
