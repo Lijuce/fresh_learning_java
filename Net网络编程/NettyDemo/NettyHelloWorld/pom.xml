@@ -11,6 +11,8 @@
     <modules>
         <module>../untitled</module>
         <module>../ProtoDesign</module>
+        <module>../PastePackage</module>
+        <module>../ChatRoom</module>
     </modules>
 
     <properties>
