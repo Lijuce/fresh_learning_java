@@ -7,17 +7,11 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
-import message.ChatRequestMessage;
-import message.ChatResponseMessage;
-import message.LoginRequestMessage;
-import message.LoginResponseMessage;
+import message.*;
 import protocol.MessageCodec;
 import protocol.ProcotolFrameDecoder;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Scanner;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -44,7 +38,7 @@ public class ChatClient {
                 protected void initChannel(SocketChannel socketChannel) throws Exception {
                     ChannelPipeline pipeline = socketChannel.pipeline();
                     pipeline.addLast(new ProcotolFrameDecoder());
-                    pipeline.addLast(new LoggingHandler(LogLevel.INFO));
+//                    pipeline.addLast(new LoggingHandler(LogLevel.INFO));
                     pipeline.addLast(new MessageCodec());
                     pipeline.addLast("Client Handler", new ChannelInboundHandlerAdapter() {
                         @Override
@@ -76,8 +70,8 @@ public class ChatClient {
                                     System.out.println("选择下一步操作:");
                                     System.out.println("==================================");
                                     System.out.println("send [username] [content]");
-                                    System.out.println("gsend [group name] [content]");
                                     System.out.println("gcreate [group name] [m1,m2,m3...]");
+                                    System.out.println("gsend [group name] [content]");
                                     System.out.println("gmembers [group name]");
                                     System.out.println("gjoin [group name]");
                                     System.out.println("gquit [group name]");
@@ -85,11 +79,44 @@ public class ChatClient {
                                     System.out.println("==================================");
                                     String[] inputStr = scanner.nextLine().split(" ");
                                     String command = inputStr[0];
+                                    String toUser;
+                                    String content;
+                                    String groupName;
+
                                     switch (command) {
                                         case "send":
-                                            String toUser = inputStr[1];
-                                            String content = inputStr[2];
+                                            toUser = inputStr[1];
+                                            content = inputStr[2];
                                             ctx.writeAndFlush(new ChatRequestMessage(content, toUser, username));
+                                            break;
+                                        case "gcreate":
+                                            // 创建群组
+                                            groupName = inputStr[1];
+                                            List<String> memList = Arrays.asList(inputStr[2].split(","));
+                                            Set<String> set = new HashSet<>(memList);
+                                            set.add(username); // 将自己加入群聊
+                                            ctx.writeAndFlush(new GroupCreateRequestMessage(groupName, set));
+                                            break;
+                                        case "gsend":
+                                            // 发送群聊消息
+                                            groupName = inputStr[1];
+                                            content = inputStr[2];
+                                            ctx.writeAndFlush(new GroupChatRequestMessage(groupName, content, username));
+                                            break;
+                                        case "gmembers":
+                                            // 查看群组成员
+                                            groupName = inputStr[1];
+                                            ctx.writeAndFlush(new GroupMembersRequestMessage(groupName));
+                                            break;
+                                        case "gjoin":
+                                            // 加入群聊
+                                            groupName = inputStr[1];
+                                            ctx.writeAndFlush(new GroupJoinRequestMessage(groupName, username));
+                                            break;
+                                        case "gquit":
+                                            // 退出群聊
+                                            groupName = inputStr[1];
+                                            ctx.writeAndFlush(new GroupQuitRequestMessage(username, groupName));
                                             break;
                                         case "quit":
                                             ctx.channel().close();
@@ -117,7 +144,28 @@ public class ChatClient {
 
                             if (msg instanceof ChatResponseMessage) {
                                 ChatResponseMessage chatResponseMessage = (ChatResponseMessage) msg;
-                                System.out.println("回复: " + chatResponseMessage.getContent());
+                                System.out.println(chatResponseMessage.getFrom() + "回复: " + chatResponseMessage.getContent());
+                            }
+
+                            if (msg instanceof GroupChatResponseMessage) {
+                                GroupChatResponseMessage message = (GroupChatResponseMessage) msg;
+                                System.out.println(message.getFrom() + "群聊消息：" + message.getContent());
+                            }
+
+                            if (msg instanceof GroupJoinResponseMessage) {
+                                GroupJoinResponseMessage message = (GroupJoinResponseMessage) msg;
+                                System.out.println(message.getReason());
+                            }
+
+                            if (msg instanceof GroupCreateResponseMessage) {
+                                GroupCreateResponseMessage message = (GroupCreateResponseMessage) msg;
+                                System.out.println(message.getReason());
+                            }
+
+                            if (msg instanceof GroupMembersResponseMessage) {
+                                GroupMembersResponseMessage message = (GroupMembersResponseMessage) msg;
+                                System.out.print("目前群聊成员有:");
+                                System.out.println(message.getMembers());
                             }
                         }
                     });
