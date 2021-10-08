@@ -7,6 +7,9 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.handler.timeout.IdleStateHandler;
 import message.*;
 import protocol.MessageCodec;
 import protocol.ProcotolFrameDecoder;
@@ -29,6 +32,8 @@ public class ChatClient {
         CountDownLatch WAIT_FOR_LOGIN = new CountDownLatch(1);
         // 用原子类型搭配countDownLatch使用
         AtomicBoolean LOGIN = new AtomicBoolean(false);
+        AtomicBoolean EXIT = new AtomicBoolean(false);
+
         try {
             Bootstrap bootstrap = new Bootstrap();
             bootstrap.group(worker);
@@ -40,6 +45,18 @@ public class ChatClient {
                     pipeline.addLast(new ProcotolFrameDecoder());
 //                    pipeline.addLast(new LoggingHandler(LogLevel.INFO));
                     pipeline.addLast(new MessageCodec());
+                    // 判断写空闲时间是否超出预期
+                    pipeline.addLast(new IdleStateHandler(0, 3, 0));
+                    pipeline.addLast(new ChannelDuplexHandler() {
+                        @Override
+                        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+                            IdleStateEvent event = (IdleStateEvent) evt;
+                            if (event.state() == IdleState.WRITER_IDLE) {
+//                                System.out.println("发送心跳包至服务端，证明客户端还存活");
+                                ctx.writeAndFlush(new PingMessage());
+                            }
+                        }
+                    });
                     pipeline.addLast("Client Handler", new ChannelInboundHandlerAdapter() {
                         @Override
                         public void channelActive(ChannelHandlerContext ctx) throws Exception {
@@ -67,6 +84,9 @@ public class ChatClient {
 
                                 // 登录成功情况
                                 while (true) {
+                                    if (EXIT.get()) {
+                                        return;
+                                    }
                                     System.out.println("选择下一步操作:");
                                     System.out.println("==================================");
                                     System.out.println("send [username] [content]");
@@ -166,6 +186,13 @@ public class ChatClient {
                                 System.out.print("目前群聊成员有:");
                                 System.out.println(message.getMembers());
                             }
+                        }
+
+                        // 在连接断开时触发
+                        @Override
+                        public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+                            System.out.println("连接已经断开，按任意键退出..");
+                            EXIT.set(true);
                         }
                     });
                 }
