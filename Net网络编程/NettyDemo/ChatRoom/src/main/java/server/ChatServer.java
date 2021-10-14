@@ -52,7 +52,7 @@ public class ChatServer {
                                 ctx.channel().close();
                             }
                         }
-                    })  ;
+                    });
                     pipeline.addLast(new LoginRequestMessageHandler());
                     pipeline.addLast(new ChatRequestMessageHandler());
                     pipeline.addLast(new GroupCreateRequestMessageHandler());

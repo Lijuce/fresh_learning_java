@@ -17,6 +17,7 @@ import protocol.ProcotolFrameDecoder;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * @ClassName ChatClient
@@ -61,7 +62,7 @@ public class ChatClient {
                         @Override
                         public void channelActive(ChannelHandlerContext ctx) throws Exception {
                             // 开新线程用于获取用户输入信息
-                            new Thread(()-> {
+                            new Thread(() -> {
                                 Scanner scanner = new Scanner(System.in);
                                 System.out.println("请输入用户名:");
                                 String username = scanner.nextLine();
@@ -84,6 +85,11 @@ public class ChatClient {
 
                                 // 登录成功情况
                                 while (true) {
+//                                    // 判断是否被中断
+//                                    if (Thread.currentThread().isInterrupted()) {
+//                                        // 处理中断逻辑
+//                                        break;
+//                                    }
                                     if (EXIT.get()) {
                                         return;
                                     }
@@ -102,7 +108,7 @@ public class ChatClient {
                                     String toUser;
                                     String content;
                                     String groupName;
-
+new ReentrantLock()
                                     switch (command) {
                                         case "send":
                                             toUser = inputStr[1];
@@ -157,7 +163,7 @@ public class ChatClient {
                                     LOGIN.set(true);
                                 }
                                 // 计数减1，唤醒前面的System in线程
-                                System.out.println("读取消息：" + msg);
+                                System.out.println(responseMessage.getReason());
                                 WAIT_FOR_LOGIN.countDown();
                             }
 
@@ -186,12 +192,24 @@ public class ChatClient {
                                 System.out.print("目前群聊成员有:");
                                 System.out.println(message.getMembers());
                             }
+
+                            if (msg instanceof GroupQuitResponseMessage) {
+                                GroupQuitResponseMessage message = (GroupQuitResponseMessage) msg;
+                                System.out.println(message.getReason());
+                            }
                         }
 
                         // 在连接断开时触发
                         @Override
                         public void channelInactive(ChannelHandlerContext ctx) throws Exception {
                             System.out.println("连接已经断开，按任意键退出..");
+                            EXIT.set(true);
+                        }
+
+                        // 在出现异常时触发
+                        @Override
+                        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+                            System.out.println("连接已经断开，按任意键退出..{}" + cause.getMessage());
                             EXIT.set(true);
                         }
                     });
