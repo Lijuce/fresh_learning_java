@@ -107,8 +107,8 @@ public class ChatClient {
                                     String command = inputStr[0];
                                     String toUser;
                                     String content;
+
                                     String groupName;
-new ReentrantLock()
                                     switch (command) {
                                         case "send":
                                             toUser = inputStr[1];
