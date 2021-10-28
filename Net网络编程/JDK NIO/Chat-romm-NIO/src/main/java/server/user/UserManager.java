@@ -31,7 +31,14 @@ public class UserManager {
         onlineUsers = new ConcurrentHashMap<>();
     }
 
-    public boolean login(SocketChannel channel, String username, String password) {
+    /**
+     * 用户登录接口 (注意线程安全)
+     * @param channel
+     * @param username
+     * @param password
+     * @return
+     */
+    public synchronized boolean login(SocketChannel channel, String username, String password) {
         // 用户不存在情况
         if (!users.containsKey(username)) {
             return false;
@@ -52,7 +59,11 @@ public class UserManager {
         return true;
     }
 
-    public void logout(SocketChannel channel) {
+    /**
+     * 用户登出接口 (注意线程安全)
+     * @param channel
+     */
+    public synchronized void logout(SocketChannel channel) {
         String logoutUsername = onlineUsers.get(channel);
         log.info("{}下线", logoutUsername);
         // 下线的用户，需释放其channel
@@ -60,7 +71,12 @@ public class UserManager {
         onlineUsers.remove(channel);
     }
 
-    public SocketChannel getUserChannel(String username) {
+    /**
+     * 获取指定用户的channel
+     * @param username
+     * @return
+     */
+    public synchronized SocketChannel getUserChannel(String username) {
         User user = users.get(username);
         if (Objects.isNull(user)) {
             return null;

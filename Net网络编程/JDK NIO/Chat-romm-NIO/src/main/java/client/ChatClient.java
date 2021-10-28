@@ -9,6 +9,7 @@ import common.enumeration.MessageType;
 import common.enumeration.ResponseType;
 import common.util.ProtoStuffUtil;
 import org.apache.commons.lang.StringUtils;
+import server.property.PromptMsgProperty;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -26,7 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @ClassName ChatClient
- * @Description TODO
+ * @Description 聊天室-客户端(命令行界面)
  * @Author Lijuce_K
  * @Date 2021/10/16 0016 10:49
  * @Version 1.0
@@ -37,11 +38,25 @@ public class ChatClient {
     private Selector selector;
     private SocketChannel clientChannel;
     private ByteBuffer buffer;
+
+    /**
+     * 客户端用户名
+     */
     private String username;
-    // 记录登录状态
+
+    /**
+     * 记录登录状态
+     */
     private boolean isLogin = false;
-    // 记录连接状态
+
+    /**
+     * 记录连接状态
+     */
     private boolean isConnected = false;
+
+    /**
+     * 退出系统标志
+     */
     private static AtomicBoolean EXIT = new AtomicBoolean(false);
     private ReceiverHandle listener;
     private static CountDownLatch countDownLatch = new CountDownLatch(1);
@@ -56,10 +71,9 @@ public class ChatClient {
     private void initNetwork() {
         try {
             clientChannel = SocketChannel.open();
+            // 先进行连接，再设置非阻塞模式
             clientChannel.connect(new InetSocketAddress("localhost",8080));
-            // 先进行连接
             clientChannel.configureBlocking(false);
-            // 再设置非阻塞模式
             selector = Selector.open();
             clientChannel.register(selector, SelectionKey.OP_READ);
             buffer = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE);
@@ -87,7 +101,7 @@ public class ChatClient {
                         .sender(username)
                         .timestamp(System.currentTimeMillis())
                         .build(),
-                password.getBytes(StandardCharsets.UTF_8));
+                password.getBytes(PromptMsgProperty.charset));
 
         try {
             // 将用户信息刷入channel
@@ -99,7 +113,9 @@ public class ChatClient {
         this.username = username;
     }
 
-    // 正式启动，进入监听状态
+    /**
+     * 正式启动，进入监听状态
+     */
     public void launch() {
         listener = new ReceiverHandle();
         new Thread(listener).start();
@@ -143,7 +159,9 @@ public class ChatClient {
                     }
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                System.out.println("服务器关闭，请重新尝试连接");
+//                e.printStackTrace();
+                isLogin = false;
             }
         }
 
@@ -174,6 +192,7 @@ public class ChatClient {
                 // 聊天消息
                 case NORMAL:
                     System.out.println("-------------------聊天消息-----------------");
+                    System.out.print(response.getHeader().getSender() + ": ");
                     System.out.println(new String(response.getBody(), Charset.defaultCharset()));
                     System.out.println("-------------------------------------------");
                     break;
@@ -183,6 +202,10 @@ public class ChatClient {
         }
     }
 
+    /**
+     * 用户消息发送接口
+     * @param content 所发送的消息内容
+     */
     public void send(String content) {
         if (!isLogin) {
             System.out.println("尚未登录");
@@ -221,6 +244,9 @@ public class ChatClient {
         }
     }
 
+    /**
+     * 客户端断开连接接口
+     */
     public void disConnect() {
         try {
             logout();
@@ -239,7 +265,7 @@ public class ChatClient {
     }
 
     /**
-     * 用户登录
+     * 客户端用户退出登录
      */
     private void logout() {
         // 本身没有登录，则直接返回。
@@ -267,50 +293,58 @@ public class ChatClient {
         System.out.println("客户端初始化...");
         ChatClient chatClient = new ChatClient();
         chatClient.launch();
-        Scanner scanner;
 
-
-        while (true) {
-            if (EXIT.get()) {
-                break;
-            }
-
-            try {
-                // 用于System.in和NIO线程间通讯
-                countDownLatch.await();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            if (!chatClient.isLogin) {
-                countDownLatch = new CountDownLatch(1);
-                System.out.println("用户名或密码错误，输入Y/y再次尝试登录，点击任意键退出...");
-                String tryLogin = new Scanner(System.in).nextLine();
-                if (StringUtils.equals("y", tryLogin) || StringUtils.equals("Y", tryLogin)) {
-                    chatClient.login();
-                    continue;
+        new Thread(() -> {
+            Scanner scanner;
+            while (true) {
+                if (EXIT.get()) {
+                    break;
                 }
-                System.out.println("退出系统中...");
-                break;
-            }
 
-            System.out.println("--------------请输入操作指令------------");
-            scanner = new Scanner(System.in);
-            String[] command = scanner.nextLine().split(":");
-            switch (command[0]) {
-                case "send":
-                    String content = command[1];
-                    chatClient.send(content);
+                try {
+                    // 用于System.in和NIO线程间通讯
+                    countDownLatch.await();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                countDownLatch = new CountDownLatch(1);
+
+                if (!chatClient.isLogin) {
+//                countDownLatch = new CountDownLatch(1);
+                    System.out.println("用户名或密码错误，输入Y/y再次尝试登录，点击任意键退出...");
+                    String tryLogin = new Scanner(System.in).nextLine();
+                    if (StringUtils.equals("y", tryLogin) || StringUtils.equals("Y", tryLogin)) {
+                        chatClient.login();
+                        continue;
+                    }
+                    System.out.println("退出系统中...");
                     break;
-                case "quit":
-                    System.out.println("退出账户");
-                    EXIT.set(true);
-                    break;
-                default:
-                    break;
+                }
+
+
+                System.out.println("--------------请输入操作指令------------------------");
+                System.out.println("         (1)群聊send:[消息内容]");
+                System.out.println("         (2)单聊send:@[用户名][消息内容]");
+                System.out.println("         (3)退出用户quit");
+                System.out.println("--------------------------------------------------");
+                scanner = new Scanner(System.in);
+                String[] command = scanner.nextLine().split(":");
+                switch (command[0]) {
+                    case "send":
+                        String content = command[1];
+                        chatClient.send(content);
+                        break;
+                    case "quit":
+                        System.out.println("退出账户");
+                        EXIT.set(true);
+                        break;
+                    default:
+                        break;
+                }
             }
-        }
-        chatClient.disConnect();
-        System.exit(0);
+            chatClient.disConnect();
+            System.exit(0);
+        }, "System in").start();
     }
 }

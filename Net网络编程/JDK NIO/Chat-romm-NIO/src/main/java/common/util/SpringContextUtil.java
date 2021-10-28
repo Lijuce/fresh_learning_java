@@ -14,7 +14,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
  * @Version 1.0
  **/
 @Slf4j
-public class SpringContextUtil {
+public final class SpringContextUtil {
     private SpringContextUtil() {
 
     }
@@ -25,6 +25,12 @@ public class SpringContextUtil {
         applicationContext = new ClassPathXmlApplicationContext("applicationContext.xml");
     }
 
+    /**
+     * 从IOC容器中获取 bean
+     * @param beanId
+     * @param <T>
+     * @return
+     */
     public static <T> T getBean(String beanId) {
         T bean = null;
         try {
@@ -38,6 +44,12 @@ public class SpringContextUtil {
         return bean;
     }
 
+    /**
+     * 先对路径名称进行处理取得名称，再根据名称获取 bean
+     * @param partName
+     * @param <T>
+     * @return
+     */
     public static <T> T getBean(String... partName) {
         StringBuffer sb = new StringBuffer();
         for (int i = 0; i < partName.length; ++i) {

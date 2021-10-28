@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @ClassName MessageHandler
- * @Description TODO
+ * @Description 消息处理抽象类
  * @Author Lijuce_K
  * @Date 2021/10/22 0022 21:02
  * @Version 1.0
@@ -24,7 +24,7 @@ public abstract class MessageHandler {
                                 Selector server,
                                 SelectionKey client,
                                 BlockingQueue<Task> tasks,
-                                AtomicInteger onlineUsers) throws InterruptedException;
+                                AtomicInteger onlineUsers) ;
 
     protected void broadcast(Selector server, byte[] data) throws IOException {
         // 此处 keys 和 selectedKeys 有区别

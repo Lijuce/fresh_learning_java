@@ -16,8 +16,17 @@ import java.util.concurrent.ConcurrentHashMap;
  * @Version 1.0
  **/
 public class ProtoStuffUtil {
+    /**
+     * 序列化缓存
+     */
     private static Map<Class<?>, Schema<?>> cachedSchema = new ConcurrentHashMap<>();
 
+    /**
+     * 序列化
+     * @param obj 序列化对象
+     * @param <T>
+     * @return
+     */
     public static <T> byte[] serialize(T obj) {
         Class<T> cls = (Class<T>) obj.getClass();
         LinkedBuffer buffer = LinkedBuffer.allocate(LinkedBuffer.DEFAULT_BUFFER_SIZE);
@@ -32,6 +41,13 @@ public class ProtoStuffUtil {
         return ProtostuffIOUtil.toByteArray(obj, schema, buffer);
     }
 
+    /**
+     * 反序列化
+     * @param data 待反序列化的字节数据
+     * @param cls 反序列化目标类
+     * @param <T>
+     * @return
+     */
     public static <T> T deserialize(byte[] data, Class<T> cls) {
         try {
             T message = cls.newInstance();

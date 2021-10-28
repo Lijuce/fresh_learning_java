@@ -8,7 +8,7 @@ import java.nio.channels.SocketChannel;
 
 /**
  * @ClassName User
- * @Description TODO
+ * @Description 用户
  * @Author Lijuce_K
  * @Date 2021/10/19 0019 11:33
  * @Version 1.0
@@ -19,6 +19,9 @@ public class User implements Serializable {
     private String username;
     private String password;
 
+    /**
+     * 每个用户对应的独立channel
+     */
     private SocketChannel channel;
 
     public User(String username, String password, SocketChannel channel) {

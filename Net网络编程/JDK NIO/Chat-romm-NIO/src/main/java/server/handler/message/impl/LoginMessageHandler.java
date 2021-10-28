@@ -7,6 +7,7 @@ import common.util.ProtoStuffUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import server.handler.message.MessageHandler;
+import server.property.PromptMsgProperty;
 import server.user.UserManager;
 
 import java.io.IOException;
@@ -22,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @ClassName LoginMessageHandler
- * @Description TODO
+ * @Description 登录消息处理器
  * @Author Lijuce_K
  * @Date 2021/10/22 0022 21:08
  * @Version 1.0
@@ -34,7 +35,7 @@ public class LoginMessageHandler extends MessageHandler {
     private UserManager userManager;
 
     @Override
-    public void handle(Message message, Selector server, SelectionKey client, BlockingQueue<Task> tasks, AtomicInteger onlineUsers) throws InterruptedException {
+    public void handle(Message message, Selector server, SelectionKey client, BlockingQueue<Task> tasks, AtomicInteger onlineUsers) {
         SocketChannel clientChannel = (SocketChannel) client.channel();
         MessageHeader header = message.getHeader();
         String username = header.getSender();
@@ -44,7 +45,6 @@ public class LoginMessageHandler extends MessageHandler {
         try {
             if (userManager.login(clientChannel, username, password)) {
                 // 密码验证完毕，登录成功后需将登录信息进行反馈
-                System.out.println("密码验证..." + onlineUsers);
                 clientChannel.write(ByteBuffer.wrap(ProtoStuffUtil.serialize(
                         new Response(
                                 ResponseHeader.builder()
@@ -53,20 +53,21 @@ public class LoginMessageHandler extends MessageHandler {
                                         .timestamp(message.getHeader().getTimestamp())
                                         .responseCode(LoginCode.LOGIN_SUCCESS.getCode())
                                         .build(),
-                                String.format("登录成功，当前共有%d位在线用户", onlineUsers.incrementAndGet()).getBytes(StandardCharsets.UTF_8)))
+                                String.format(PromptMsgProperty.LOGIN_SUCCESS, onlineUsers.incrementAndGet()).getBytes(StandardCharsets.UTF_8)))
                 ));
 
                 // 中断一会儿
-                Thread.sleep(10);
+//                Thread.sleep(10);
+
                 // 登录提示广播
                 byte[] loginBroadcast = ProtoStuffUtil.serialize(
                         new Response(
                                 ResponseHeader.builder()
-                                        .type(ResponseType.NORMAL)
+                                        .type(ResponseType.PROMPT)
                                         .sender(SYSTEM_SENDER)
                                         .timestamp(message.getHeader().getTimestamp())
                                         .build(),
-                                String.format("%s用户已上线", message.getHeader().getSender()).getBytes(StandardCharsets.UTF_8)
+                                String.format(PromptMsgProperty.LOGIN_BROADCAST, message.getHeader().getSender()).getBytes(StandardCharsets.UTF_8)
                         )
                 );
                 super.broadcast(server, loginBroadcast);
@@ -79,7 +80,7 @@ public class LoginMessageHandler extends MessageHandler {
                         .sender(message.getHeader().getSender())
                         .timestamp(message.getHeader().getTimestamp())
                         .build(),
-                        "用户名或密码错误或重复登录，登录失败".getBytes(StandardCharsets.UTF_8)
+                        PromptMsgProperty.LOGIN_FAILURE.getBytes(StandardCharsets.UTF_8)
                 );
                 byte[] loginFailedMsgSeria = ProtoStuffUtil.serialize(loginFailedMsg);
                 clientChannel.write(ByteBuffer.wrap(loginFailedMsgSeria));

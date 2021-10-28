@@ -21,13 +21,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @ClassName ChatServer
- * @Description TODO
+ * @Description 聊天室-服务器端
  * @Author Lijuce_K
  * @Date 2021/10/15 0015 20:30
  * @Version 1.0
  **/
 @Slf4j
 public class ChatServer {
+    /**
+     * 默认缓冲区大小
+     */
     static final int DEFAULT_BUFFER_SIZE = 16;
 
     private static Selector selector;
@@ -35,11 +38,19 @@ public class ChatServer {
     private ExecutorService readPool;
     private ListenerThread listenerThread;
     private BlockingQueue<Task> downloadTaskQueue;
+
+    /**
+     * 在线用户数(原子类存储，保证原子性操作)
+     */
     private AtomicInteger onlineUsers;
 
     public ChatServer() {
         initServer();
     }
+
+    /**
+     * 初始化服务器端
+     */
     private void initServer() {
         try {
             serverSocketChannel = ServerSocketChannel.open();
@@ -65,6 +76,9 @@ public class ChatServer {
         new Thread(listenerThread).start();
     }
 
+    /**
+     * 关闭服务器端(先释放依赖资源，最后断开)
+     */
     private void shutdownServer() {
         try {
             listenerThread.shutdown();
@@ -145,7 +159,7 @@ public class ChatServer {
     }
 
     /**
-     * 读取事件处理线程
+     * 读取事件处理器线程
      */
     private class ReadEventHandler implements Runnable {
         private SelectionKey key;
@@ -188,12 +202,7 @@ public class ChatServer {
                 // 处理响应消息 bytes
                 Message message = ProtoStuffUtil.deserialize(bytes, Message.class);
                 MessageHandler messageHandler = SpringContextUtil.getBean("MessageHandler", message.getHeader().getType().toString().toLowerCase());
-                try {
-                    messageHandler.handle(message, selector, key, downloadTaskQueue, onlineUsers);
-                } catch (InterruptedException e) {
-                    log.error("服务器线程被中断");
-                    e.printStackTrace();
-                }
+                messageHandler.handle(message, selector, key, downloadTaskQueue, onlineUsers);
             } catch (IOException e) {
                 e.printStackTrace();
             }

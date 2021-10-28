@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import server.handler.message.MessageHandler;
+import server.property.PromptMsgProperty;
 import server.user.UserManager;
 
 import java.io.IOException;
@@ -25,7 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @ClassName LogoutMessageHandler
- * @Description TODO
+ * @Description 登出消息处理器
  * @Author Lijuce_K
  * @Date 2021/10/26 0026 9:18
  * @Version 1.0
@@ -37,7 +38,7 @@ public class LogoutMessageHandler extends MessageHandler {
     UserManager userManager;
 
     @Override
-    public void handle(Message message, Selector server, SelectionKey client, BlockingQueue<Task> tasks, AtomicInteger onlineUsers) throws InterruptedException {
+    public void handle(Message message, Selector server, SelectionKey client, BlockingQueue<Task> tasks, AtomicInteger onlineUsers) {
         try {
             SocketChannel clientChannel = (SocketChannel) client.channel();
             userManager.logout(clientChannel);
@@ -49,7 +50,7 @@ public class LogoutMessageHandler extends MessageHandler {
                                     .sender(message.getHeader().getSender())
                                     .timestamp(message.getHeader().getTimestamp())
                                     .build(),
-                            "注销成功".getBytes(StandardCharsets.UTF_8)
+                            PromptMsgProperty.LOGOUT_SUCCESS.getBytes(StandardCharsets.UTF_8)
                     )
             );
             clientChannel.write(ByteBuffer.wrap(response));
@@ -64,7 +65,7 @@ public class LogoutMessageHandler extends MessageHandler {
                                     .sender(SYSTEM_SENDER)
                                     .timestamp(message.getHeader().getTimestamp())
                                     .build(),
-                            String.format("%s用户已下线", message.getHeader().getSender()).getBytes(StandardCharsets.UTF_8)
+                            String.format(PromptMsgProperty.LOGOUT_BROADCAST, message.getHeader().getSender()).getBytes(StandardCharsets.UTF_8)
                     )
             );
             super.broadcast(server, logoutBroadcast);

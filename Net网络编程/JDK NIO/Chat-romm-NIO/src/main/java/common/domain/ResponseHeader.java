@@ -7,7 +7,7 @@ import lombok.Data;
 
 /**
  * @ClassName ResponseHeader
- * @Description TODO
+ * @Description 响应消息头部内容
  * @Author Lijuce_K
  * @Date 2021/10/22 0022 11:30
  * @Version 1.0

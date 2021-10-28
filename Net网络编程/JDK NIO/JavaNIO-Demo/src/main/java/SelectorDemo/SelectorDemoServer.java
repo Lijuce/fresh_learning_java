@@ -49,10 +49,11 @@ public class SelectorDemoServer {
                     ServerSocketChannel channel = (ServerSocketChannel) key.channel();
                     SocketChannel accept = channel.accept();
                     accept.configureBlocking(false);
-                    SelectionKey acceptKey = accept.register(selector, 0, null);
-                    acceptKey.interestOps(SelectionKey.OP_READ);
+                    accept.register(selector, SelectionKey.OP_READ);
+//                    SelectionKey acceptKey = accept.register(selector, SelectionKey.OP_READ);
+//                    acceptKey.interestOps(SelectionKey.OP_READ);
                     System.out.println("accept" + accept);
-                    System.out.println("acceptKey: " + acceptKey);
+//                    System.out.println("acceptKey: " + acceptKey);
                 } else if (key.isReadable()) {
                     System.out.println("进入可读状态");
                     // 处理异常断开情况

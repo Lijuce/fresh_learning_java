@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets;
 
 /**
  * @ClassName PromptMsgProperty
- * @Description TODO
+ * @Description 消息提示常量属性
  * @Author Lijuce_K
  * @Date 2021/10/26 0026 15:30
  * @Version 1.0

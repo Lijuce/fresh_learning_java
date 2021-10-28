@@ -1,5 +1,8 @@
 package common.enumeration;
 
+/**
+ * 响应消息类型
+ */
 public enum ResponseType {
     NORMAL(1, "消息"),
     PROMPT(2, "提示");

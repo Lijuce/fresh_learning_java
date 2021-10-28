@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @ClassName BroadcastMessageHandler
- * @Description TODO
+ * @Description 消息广播处理器
  * @Author Lijuce_K
  * @Date 2021/10/25 0025 21:10
  * @Version 1.0
@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Component("MessageHandler.broadcast")
 public class BroadcastMessageHandler extends MessageHandler {
     @Override
-    public void handle(Message message, Selector server, SelectionKey client, BlockingQueue<Task> tasks, AtomicInteger onlineUsers) throws InterruptedException {
+    public void handle(Message message, Selector server, SelectionKey client, BlockingQueue<Task> tasks, AtomicInteger onlineUsers) {
         try {
             byte[] response = ProtoStuffUtil.serialize(
                     new Response(

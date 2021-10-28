@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * @ClassName Response
- * @Description TODO
+ * @Description 响应消息
  * @Author Lijuce_K
  * @Date 2021/10/22 0022 11:29
  * @Version 1.0

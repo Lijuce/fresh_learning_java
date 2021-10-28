@@ -5,7 +5,7 @@ import java.util.Map;
 
 /**
  * @ClassName LoginCode
- * @Description TODO
+ * @Description 登录状态
  * @Author Lijuce_K
  * @Date 2021/10/22 0022 15:52
  * @Version 1.0
