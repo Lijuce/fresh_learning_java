@@ -24,7 +24,7 @@ public abstract class MessageHandler {
                                 Selector server,
                                 SelectionKey client,
                                 BlockingQueue<Task> tasks,
-                                AtomicInteger onlineUsers) ;
+                                AtomicInteger onlineUsers) throws InterruptedException;
 
     protected void broadcast(Selector server, byte[] data) throws IOException {
         // 此处 keys 和 selectedKeys 有区别

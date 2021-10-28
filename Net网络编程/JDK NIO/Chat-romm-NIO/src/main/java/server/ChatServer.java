@@ -6,6 +6,7 @@ import common.util.ProtoStuffUtil;
 import common.util.SpringContextUtil;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import server.exception.handler.InterruptedExceptionHandler;
 import server.handler.message.MessageHandler;
 
 import javax.swing.*;
@@ -38,6 +39,7 @@ public class ChatServer {
     private ExecutorService readPool;
     private ListenerThread listenerThread;
     private BlockingQueue<Task> downloadTaskQueue;
+    private InterruptedExceptionHandler interruptedExceptionHandler;
 
     /**
      * 在线用户数(原子类存储，保证原子性操作)
@@ -202,7 +204,14 @@ public class ChatServer {
                 // 处理响应消息 bytes
                 Message message = ProtoStuffUtil.deserialize(bytes, Message.class);
                 MessageHandler messageHandler = SpringContextUtil.getBean("MessageHandler", message.getHeader().getType().toString().toLowerCase());
-                messageHandler.handle(message, selector, key, downloadTaskQueue, onlineUsers);
+                try {
+                    // 由于该处需等待处理，保证执行顺利，因此需进行中断异常捕获及处理
+                    messageHandler.handle(message, selector, key, downloadTaskQueue, onlineUsers);
+                } catch (InterruptedException e) {
+                    log.error("服务器线程中断");
+                    interruptedExceptionHandler.handleException(client, message);
+                    e.printStackTrace();
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
