@@ -19,6 +19,6 @@ public class BossWorkerMultiThreadClient {
         socketChannel.write(Charset.defaultCharset().encode("avasdfsdf"));
         System.out.println("connected");
         // 客户端正常断开
-//        socketChannel.close();
+        socketChannel.close();
     }
 }

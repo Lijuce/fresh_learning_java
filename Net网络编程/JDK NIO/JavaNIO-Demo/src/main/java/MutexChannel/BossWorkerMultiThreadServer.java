@@ -42,6 +42,7 @@ public class BossWorkerMultiThreadServer {
             boss.select();
             Iterator<SelectionKey> iterator = boss.selectedKeys().iterator();
             while (iterator.hasNext()) {
+                System.out.println("Boss init...");
                 SelectionKey key = iterator.next();
                 iterator.remove();
                 if (key.isAcceptable()) {
@@ -53,7 +54,6 @@ public class BossWorkerMultiThreadServer {
                     workers[index.getAndIncrement() % workers.length].init(sc);
                     System.out.println(sc.getClass());
                     System.out.println("After init..." + sc.getRemoteAddress());
-//                    worker.init(sc);
                 }
             }
         }
@@ -68,6 +68,7 @@ public class BossWorkerMultiThreadServer {
          * 此处即用于 boss 和 worker 间的通讯
          */
         ConcurrentLinkedQueue<Runnable> queue = new ConcurrentLinkedQueue<>();
+
         /**
          * Worker对应 Selector
          */
@@ -78,6 +79,9 @@ public class BossWorkerMultiThreadServer {
          */
         private Thread thread;
 
+        /**
+         * 线程名称
+         */
         private String name;
 
         /**
@@ -93,12 +97,14 @@ public class BossWorkerMultiThreadServer {
          * worker的初始化方法
          */
         public void init(SocketChannel sc) throws IOException {
+            // 首次初始化
             if (!initState) {
                 thread = new Thread(this, name);
                 selector = Selector.open();
                 thread.start();
                 initState = true;
             }
+
             // Worker 内部进行注册
             queue.add(() -> {
                 try {
@@ -107,6 +113,7 @@ public class BossWorkerMultiThreadServer {
                     e.printStackTrace();
                 }
             });
+
             /**
              * 此处重点之一：wakeup方法，可将select方法造成的阻塞状态更改为非阻塞
              */
@@ -130,7 +137,11 @@ public class BossWorkerMultiThreadServer {
                             System.out.println("进入可读状态");
                             ByteBuffer buffer = ByteBuffer.allocate(16);
                             SocketChannel channel = (SocketChannel) key.channel();
-                            channel.read(buffer);
+                            int readLen = channel.read(buffer);
+                            if (readLen == -1) {
+                                // 客户端发起断开连接请求
+                                key.cancel();
+                            }
                             buffer.flip();
                             while (buffer.hasRemaining()) {
                                 byte b = buffer.get();
