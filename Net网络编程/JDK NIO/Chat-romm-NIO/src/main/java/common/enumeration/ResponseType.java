@@ -5,7 +5,8 @@ package common.enumeration;
  */
 public enum ResponseType {
     NORMAL(1, "消息"),
-    PROMPT(2, "提示");
+    PROMPT(2, "提示"),
+    KEEPALIVEMSG(3, "心跳检测提示");
 
     private int code;
     private String desc;

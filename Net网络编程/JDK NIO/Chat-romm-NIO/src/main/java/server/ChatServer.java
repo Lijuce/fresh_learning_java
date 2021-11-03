@@ -4,18 +4,18 @@ import common.domain.Message;
 import common.domain.Task;
 import common.util.ProtoStuffUtil;
 import common.util.SpringContextUtil;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import server.exception.handler.InterruptedExceptionHandler;
 import server.handler.message.MessageHandler;
 
-import javax.swing.*;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Scanner;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -39,6 +39,8 @@ public class ChatServer {
     private ExecutorService readPool;
     private ListenerThread listenerThread;
     private BlockingQueue<Task> downloadTaskQueue;
+
+    @Autowired
     private InterruptedExceptionHandler interruptedExceptionHandler;
 
     /**
@@ -92,7 +94,13 @@ public class ChatServer {
         }
     }
 
+    /**
+     * 监听线程器
+     */
     private class ListenerThread extends Thread {
+        long lastReceiveTime = System.currentTimeMillis();
+        long receiveTimeDelay = 5000;
+        SelectionKey key;
 
         /**
          * 内部调用线程中断接口
@@ -117,24 +125,35 @@ public class ChatServer {
         public void run() {
             try {
                 while (!Thread.currentThread().isInterrupted()) {
-                    // 阻塞监听
-                    selector.select();
-                    Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
-                    // 获取选择器中所有注册的监听事件
-                    while (iterator.hasNext()) {
-                        SelectionKey key = iterator.next();
-                        // 删除已选 key 避免重复处理
-                        iterator.remove();
-                        // 若触发接收事件
-                        if (key.isAcceptable()) {
-                            // 交由负责接收事件的处理器处理
-                            handleAcceptRequest();
-                        } else if (key.isReadable()) {
-                            // 读操作处理器
-                            // 取消可读触发标记，本次处理后才复位读取标记
-                            key.interestOps(key.interestOps() & (~SelectionKey.OP_READ));
-                            // 交由读取事件的处理器处理
-                            readPool.execute(new ReadEventHandler(key));
+//                    System.out.println("进入阻塞select");
+                    lastReceiveTime = System.currentTimeMillis();
+                    selector.select(receiveTimeDelay);
+
+                    if (System.currentTimeMillis() - lastReceiveTime > receiveTimeDelay) {
+                        // 超时未接收到心跳包，主动断开与客户端的连接
+                        if (Objects.nonNull(key) && key.isValid()) {
+                            System.out.println("断开客户端连接...");
+                            key.channel().close();
+                        }
+                    } else {
+                        // 阻塞监听(设置过期时间)
+                        Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
+                        // 获取选择器中所有注册的监听事件
+                        while (iterator.hasNext()) {
+                            key = iterator.next();
+                            // 删除已选 key 避免重复处理
+                            iterator.remove();
+                            // 若触发接收事件
+                            if (key.isAcceptable()) {
+                                // 交由负责接收事件的处理器处理
+                                handleAcceptRequest();
+                            } else if (key.isReadable()) {
+                                // 读操作处理器
+                                // 取消可读触发标记，本次处理后才复位读取标记
+                                key.interestOps(key.interestOps() & (~SelectionKey.OP_READ));
+                                // 交由读取事件的处理器处理
+                                readPool.execute(new ReadEventHandler(key));
+                            }
                         }
                     }
                 }
@@ -168,6 +187,8 @@ public class ChatServer {
         private SocketChannel client;
         private ByteBuffer buffer;
         private ByteArrayOutputStream baos;
+        private Message message;
+        MessageHandler messageHandler;
 
         public ReadEventHandler(SelectionKey key) {
             this.key = key;
@@ -181,15 +202,15 @@ public class ChatServer {
             try {
                 int size;
                 while ((size = client.read(buffer)) > 0) {
+                    // 读取数据
                     buffer.flip();
                     baos.write(buffer.array(), 0, size);
                     buffer.clear();
-                    log.info("读取数据...");
                 }
                 if (size == -1) {
                     return;
                 }
-                log.info("读取完毕，继续监听");
+
                 // 继续监听读取事件
                 key.interestOps(key.interestOps() | SelectionKey.OP_READ);
 
@@ -198,12 +219,10 @@ public class ChatServer {
 
                 byte[] bytes = baos.toByteArray();
                 baos.close();
-                System.out.println("--------------------接收到的消息-------------");
-                System.out.println(bytes.length);
 
                 // 处理响应消息 bytes
-                Message message = ProtoStuffUtil.deserialize(bytes, Message.class);
-                MessageHandler messageHandler = SpringContextUtil.getBean("MessageHandler", message.getHeader().getType().toString().toLowerCase());
+                message = ProtoStuffUtil.deserialize(bytes, Message.class);
+                messageHandler = SpringContextUtil.getBean("MessageHandler", message.getHeader().getType().toString().toLowerCase());
                 try {
                     // 由于该处需等待处理，保证执行顺利，因此需进行中断异常捕获及处理
                     messageHandler.handle(message, selector, key, downloadTaskQueue, onlineUsers);
@@ -213,7 +232,14 @@ public class ChatServer {
                     e.printStackTrace();
                 }
             } catch (IOException e) {
+                log.error("客户端异常中断...将释放客户端连接");
                 e.printStackTrace();
+                try {
+                    messageHandler = SpringContextUtil.getBean("MessageHandler", "logoutinterrupted");
+                    messageHandler.handle(message, selector, key, downloadTaskQueue, onlineUsers);
+                } catch (InterruptedException interruptedException) {
+                    interruptedException.printStackTrace();
+                }
             }
         }
     }
@@ -237,4 +263,22 @@ public class ChatServer {
     }
 
 
+//    public interface ObjectAction {
+//        Object doAction(Object rev, ChatServer server);
+//    }
+//
+//    public static final class DefaultObjectAction implements ObjectAction {
+//        @Override
+//        public Object doAction(Object rev, ChatServer server) {
+//            System.out.println("处理并返回：" + rev);
+//            return rev;
+//        }
+//    }
+//
+//    class ConnWatchDog implements Runnable {
+//        @Override
+//        public void run() {
+//
+//        }
+//    }
 }

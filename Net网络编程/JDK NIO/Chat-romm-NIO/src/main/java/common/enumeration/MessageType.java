@@ -12,7 +12,8 @@ public enum MessageType {
     LOGOUT(2, "注销"),
     NORMAL(3, "单聊"),
     BROADCAST(4, "群发"),
-    TASK(4, "任务");
+    TASK(5, "任务"),
+    KEEPALIVE(6, "心跳检测");
 
     private int code;
     private String desc;

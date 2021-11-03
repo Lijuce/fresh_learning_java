@@ -1,9 +1,6 @@
 package client;
 
-import common.domain.Message;
-import common.domain.MessageHeader;
-import common.domain.Response;
-import common.domain.ResponseHeader;
+import common.domain.*;
 import common.enumeration.LoginCode;
 import common.enumeration.MessageType;
 import common.enumeration.ResponseType;
@@ -13,6 +10,8 @@ import server.property.PromptMsgProperty;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -21,6 +20,7 @@ import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -38,6 +38,11 @@ public class ChatClient {
     private Selector selector;
     private SocketChannel clientChannel;
     private ByteBuffer buffer;
+
+    /**
+     * 最后一次发送数据的时间 (用于心跳检测机制)
+     */
+    private long lastSendTime;
 
     /**
      * 客户端用户名
@@ -77,8 +82,10 @@ public class ChatClient {
             selector = Selector.open();
             clientChannel.register(selector, SelectionKey.OP_READ);
             buffer = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE);
-            login();
             isConnected = true;
+            startKeepAlive();
+            new Thread(new ReceiverHandle()).start();
+            login();
             EXIT = new AtomicBoolean(false);
         } catch (IOException e) {
             e.printStackTrace();
@@ -135,6 +142,7 @@ public class ChatClient {
         public void run() {
             try {
                 while (connected) {
+//                    System.out.println("触发ReceiverHandle...");
                     selector.select();
                     int readSize;
                     Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
@@ -154,13 +162,11 @@ public class ChatClient {
                             // 处理接收到的Response响应信息
                             Response response = ProtoStuffUtil.deserialize(bytes, Response.class);
                             handleResponse(response);
-                            countDownLatch.countDown();
                         }
                     }
                 }
             } catch (IOException e) {
                 System.out.println("服务器关闭，请重新尝试连接");
-//                e.printStackTrace();
                 isLogin = false;
             }
         }
@@ -168,6 +174,9 @@ public class ChatClient {
         private void handleResponse(Response response) {
             // 详细处理response
             ResponseHeader header = response.getHeader();
+            if (Objects.isNull(header)) {
+                return;
+            }
             switch (header.getType()) {
                 // 系统提示
                 case PROMPT:
@@ -181,6 +190,7 @@ public class ChatClient {
                             System.out.println("登录成功");
                         } else if (loginCode == LoginCode.LOGOUT_SUCCESS) {
                             System.out.println("下线成功");
+                            isLogin = false;
                             break;
                         }
                     }
@@ -188,6 +198,7 @@ public class ChatClient {
                     System.out.println("-------------------------------系统提示-------------------------------");
                     System.out.println(info);
                     System.out.println("---------------------------------------------------------------------");
+                    countDownLatch.countDown();
                     break;
                 // 聊天消息
                 case NORMAL:
@@ -195,6 +206,11 @@ public class ChatClient {
                     System.out.print(response.getHeader().getSender() + ": ");
                     System.out.println(new String(response.getBody(), Charset.defaultCharset()));
                     System.out.println("-------------------------------------------");
+                    countDownLatch.countDown();
+                    break;
+                // 心跳检测响应
+                case KEEPALIVEMSG:
+//                    System.out.println("心跳检测");
                     break;
                 default:
                     break;
@@ -312,7 +328,7 @@ public class ChatClient {
 
                 if (!chatClient.isLogin) {
 //                countDownLatch = new CountDownLatch(1);
-                    System.out.println("用户名或密码错误，输入Y/y再次尝试登录，点击任意键退出...");
+                    System.out.println("用户名或密码错误，输入Y/y再次尝试登录，点击其它任意键退出...");
                     String tryLogin = new Scanner(System.in).nextLine();
                     if (StringUtils.equals("y", tryLogin) || StringUtils.equals("Y", tryLogin)) {
                         chatClient.login();
@@ -346,5 +362,81 @@ public class ChatClient {
             chatClient.disConnect();
             System.exit(0);
         }, "System in").start();
+    }
+
+    /**
+     * 启动心跳检测机制
+     */
+    public void startKeepAlive() {
+        new Thread(new KeepAliveWatchDog()).start();
+    }
+
+    public static interface  ObjectAction {
+        void doAction(Object obj, ChatClient client);
+    }
+
+    public static final class DefaultObjectAction implements ObjectAction {
+        @Override
+        public void doAction(Object obj, ChatClient client) {
+            System.out.println("处理: \t" + obj.toString());
+        }
+    }
+
+    class KeepAliveWatchDog implements Runnable {
+        long keepAliveDelay = 3000;
+
+
+        @Override
+        public void run() {
+            lastSendTime = System.currentTimeMillis();
+
+            while (isConnected) {
+                if (System.currentTimeMillis() - lastSendTime > keepAliveDelay) {
+                    try {
+                        ChatClient.this.sendObject(new KeepAlive());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        ChatClient.this.stop();
+                    }
+                    lastSendTime = System.currentTimeMillis();
+                } else {
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                        ChatClient.this.stop();
+                    }
+                }
+            }
+        }
+    }
+
+    public void stop() {
+        if (isConnected) {
+            isConnected = false;
+        }
+    }
+
+    public void sendObject(Object obj) throws IOException {
+        KeepAlive keepAlive = (KeepAlive) obj;
+        Message message = new Message(
+                MessageHeader.builder()
+                        .type(MessageType.KEEPALIVE)
+                        .sender(username)
+                        .timestamp(System.currentTimeMillis())
+                        .build(),
+                keepAlive.toString().getBytes(StandardCharsets.UTF_8)
+        );
+        clientChannel.write(ByteBuffer.wrap(ProtoStuffUtil.serialize(message)));
+    }
+
+
+    class ReceiveWatchDog implements Runnable {
+        @Override
+        public void run() {
+            while (isConnected) {
+
+            }
+        }
     }
 }

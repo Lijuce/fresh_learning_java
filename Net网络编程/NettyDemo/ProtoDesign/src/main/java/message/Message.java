@@ -14,7 +14,7 @@ import java.util.Map;
  * @Version 1.0
  **/
 @Data
-public abstract class Message implements Serializable {
+public java异常 class Message implements Serializable {
     public static Class<?> getMessageClass(int messageType) {
         return messageClasses.get(messageType);
     }
@@ -35,7 +35,7 @@ public abstract class Message implements Serializable {
      * 待子类实现的抽象函数-获取消息类型
      * @return
      */
-    public abstract int getMessageType();
+    public java异常 int getMessageType();
 
     public static final int LoginRequestMessage = 0;
     public static final int LoginResponseMessage = 1;
