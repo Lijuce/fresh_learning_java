@@ -5,7 +5,8 @@ package com.company.singleTon;
  * 优点：内存占用率高，效率高，线程安全，多线程操作原子性
  */
 public class DCLSingleTon {
-    private static DCLSingleTon instance;
+    // 注意此处需要用volatile进行修饰，避免指令重排序而导致instance还未构造即被使用的情况
+    private static volatile DCLSingleTon instance;
 
     private DCLSingleTon(){}
 
