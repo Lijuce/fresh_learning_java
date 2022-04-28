@@ -76,3 +76,60 @@ public class ABCThread {
         }
     }
 }
+
+
+/**
+ * 这个方法更为简洁
+ * 采用flag来记录打印标记
+ */
+@Slf4j(topic = "Mytest")
+public class Main {
+    public static void main(String[] args) throws ExecutionException, InterruptedException {
+        log.info("Start...");
+        WaitNotify wn = new WaitNotify(1, 3);
+        new Thread(() -> {
+            wn.print("a", 1, 2);
+        }).start();
+        new Thread(() -> {
+            wn.print("b", 2, 3);
+        }).start();
+        new Thread(() -> {
+            wn.print("c", 3, 1);
+        }).start();
+    }
+}
+
+class WaitNotify {
+    /**
+     * 等待标记
+     */
+    private int flag;
+
+    /**
+     * 循环次数
+     */
+    private int loopNum;
+
+    public WaitNotify(int flag, int loopNum) {
+        this.flag = flag;
+        this.loopNum = loopNum;
+    }
+
+    public void print(String content, int waitFlag, int nextFlag) {
+        for (int i = 0; i < this.loopNum; i++) {
+            synchronized (this) {
+                // 当等待标记不符合要打印的内容，则进行等待
+                while (this.flag != waitFlag) {
+                    try {
+                        this.wait();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                System.out.print(content);
+                this.flag = nextFlag;
+                this.notifyAll();
+            }
+        }
+    }
+}
